@@ -1,0 +1,42 @@
+﻿.OnlineUsersComponentContainer{
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: 35px 1fr;
+}
+.DisplayGroupSection{
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 10px;
+}
+.group{
+    display: block;
+    margin-right: 10px;
+    border-radius: 5px;
+    padding: 5px;
+    box-sizing: border-box;
+    background-color: rgba(255, 255, 255, 0.3);
+    transition: 0.3s;
+    max-width: 230px;
+}
+.group:hover{
+        background-color: rgba(255, 255, 255, 0.5);
+}
+img{
+    width: 220px;
+    height: 130px;
+}
+.GroupHeader{
+    padding: 3px;
+    border: 2px solid white;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.3);
+    display: grid;
+    place-content: center;
+    width: 80%;
+}
+.MainSection{
+    padding-top: 10px;
+    box-sizing: border-box;
+}

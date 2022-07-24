@@ -1,0 +1,119 @@
+﻿@inject HttpClient httpClient
+@inject AuthenticationStateProvider authProvider
+
+<div class="OnlineUsersComponentContainer">
+    <div class="GroupHeader">
+        <h3>Explore the learning groups</h3>
+    </div>
+    <div class="MainSection" style="max-height: 80%; overflow-y: auto;">
+        <div class="DisplayGroupSection">
+            <div class="group" style="width: 230px;">
+                <div style="width: 100%; display: grid; place-content: center;">
+                    <h3>Create a new group</h3>
+                </div>
+                <label>Name:</label>
+                <div style="width: 100%; display: grid; place-content: center;">
+                    <input @bind="groupname" @bind:event="oninput" />
+                </div>
+                <label>Purpose:</label>
+                <div style="width: 100%; display: grid; place-content: center;">
+                    <input @bind="purpose" @bind:event="oninput" />
+                </div>
+                <label>Image URI:</label>
+                <div style="width: 100%; display: grid; place-content: center;">
+                    <input @bind="imageURI" @bind:event="oninput" />
+                </div>
+                <div style="width: 100%; display: grid; place-content: center; height: 25px; margin-top: 10px;">
+                    <AuthorizeView>
+                        <Authorized>
+                            <button @onclick="async() => await CreateGroupAsync()">Create Group</button>
+                        </Authorized>
+                        <NotAuthorized>
+                            <button @onclick="() => ((HostAuthenticationStateProvider)authProvider).SignIn()">Login to create a group</button>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </div>
+            </div>
+            @if (groups?.Count > 0)
+            {
+                foreach (var group in groups)
+                {
+                    <div class="group">
+                        <div style="width: 100%; display: grid; place-content: center;">
+                            <h3>@group.Name</h3>
+                        </div>
+                        <div style="width: 100%; display: grid; place-content: center;">
+                            <img src="@group.PictureURI" />
+                        </div>
+                        <h5 style="margin-top: 4px;">@group.Purpose</h5>
+                        <AuthorizeView>
+                            <Authorized>
+                                @if (group.CreatorId == context.User.Claims.Where(s => s.Type == ClaimTypes.NameIdentifier).First().Value)
+                                {
+                                    <div style="width: 100%; display: flex; justify-content: space-evenly; margin-top: 5px;">
+                                        <button @onclick="() => ChosenGroup.InvokeAsync(group)">Select Group</button>
+                                        <button @onclick="async() => await DeleteGroupAsync(group.Id)">Delete Group</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="width: 100%; display: grid; place-content: center; margin-top: 5px;">
+                                        <button @onclick="() => ChosenGroup.InvokeAsync(group)">Select Group</button>
+                                    </div>
+                                }
+                            </Authorized>
+                            <NotAuthorized>
+                                <div style="width: 100%; display: grid; place-content: center; margin-top: 5px;">
+                                    <button @onclick="() => ChosenGroup.InvokeAsync(group)">Select Group</button>
+                                </div>
+                            </NotAuthorized>
+                        </AuthorizeView>          
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code{
+    [Parameter]
+    public EventCallback<GroupDTO> ChosenGroup { get; set; }
+    [CascadingParameter]
+    public HubConnection hubConnection { get; set; }
+
+    private string groupname, purpose, imageURI;
+    private List<GroupDTO> groups;
+    protected override async Task OnInitializedAsync()
+    {
+        groups = await httpClient.GetFromJsonAsync<List<GroupDTO>>("/api/group/GetAllGroups");
+        StateHasChanged();
+
+        hubConnection.On("UpdateGroups", async () =>
+        {
+            groups = await httpClient.GetFromJsonAsync<List<GroupDTO>>("/api/group/GetAllGroups");
+            StateHasChanged();
+        });
+    }
+
+    public async Task CreateGroupAsync()
+    {
+        await httpClient.PostAsJsonAsync<GroupDTO>("/api/group/CreateGroup", new GroupDTO
+        {
+            Purpose = purpose,
+            Name = groupname,
+            PictureURI = imageURI
+        });
+        groups = await httpClient.GetFromJsonAsync<List<GroupDTO>>("/api/group/GetAllGroups");
+        purpose = string.Empty;
+        groupname = string.Empty;
+        imageURI = string.Empty;
+        StateHasChanged();
+    }
+
+    public async Task DeleteGroupAsync(Guid groupId)
+    {
+        await httpClient.GetAsync($"api/group/deletegroup/{groupId}");
+        groups = await httpClient.GetFromJsonAsync<List<GroupDTO>>("/api/group/GetAllGroups");
+        StateHasChanged();
+    }
+}

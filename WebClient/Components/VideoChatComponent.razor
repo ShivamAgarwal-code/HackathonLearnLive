@@ -1,0 +1,285 @@
+﻿@inject HttpClient httpClient
+@inject VideoJS videoJS
+@inject NavigationManager navigationManager
+@implements IAsyncDisposable 
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider authProvider
+
+<style>
+    #camera{
+        position: relative;
+    }
+    #camera video{
+        width: 300px;
+    }
+    .CameraName{
+        position: absolute;
+        bottom: 5px;
+        left: 5px;
+    }
+    button {
+        padding: 3px;
+        border: 2px solid white;
+        outline: none;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.3);
+        color: white;
+        font-size: 20px;
+    }
+    .message{
+        margin: 4px 0;
+    }
+    .LearningNote {
+        padding: 3px;
+        border: 2px solid white;
+        outline: none;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.3);
+        color: white;
+        font-size: 20px;
+        margin-bottom: 5px;
+    }
+</style>
+
+
+<div class="VideoChatComponentContainer" style="height: calc(100% - 200px);">
+    @if (GroupDTO == null)
+    {
+        <div class="GroupHeader">
+            <h3>Select a learning group to see its chat and video call</h3>
+        </div>
+    }
+    else
+    {
+        <div class="GroupHeader">
+            <h3>@GroupDTO.Name</h3>
+        </div>
+    }
+    @if (GroupDTO != null)
+    {
+        <div style="padding-top: 10px; height: 100%; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 1fr 300px;">
+            <div style="height: 100%;">
+                <CameraSelectorComponent CameraChanged="camera => activeCamera = camera" />
+                    <AuthorizeView>
+                        <Authorized>
+                            @if (!isVideoChatting && activeCamera == null)
+                            {
+                                <button>Select Camera to Join Video Chat</button>
+                            }
+                            else if (activeCamera != null && isVideoChatting == false)
+                            {
+                                <button @onclick="async () => await TryJoinRoomAsync(GroupDTO.Id.ToString())">Join Video Chat</button>
+                            }
+                            else if(isVideoChatting)
+                            {
+                                <button @onclick="async () => await OnLeaveRoom()">Leave Video Chat</button>
+                            }
+                        </Authorized>
+                        <NotAuthorized>
+                            <button @onclick="() => ((HostAuthenticationStateProvider)authProvider).SignIn()">Login to join video Chat</button>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                <div class="ChatContainer">
+                    <div style="padding: 5px; box-sizing: border-box;">
+                        <h3>Chat with the group members and create learning notes</h3>
+                        <AuthorizeView>
+                            <Authorized>
+                                @if (messagesDTOs != null)
+                                {
+                                    @foreach (var message in messagesDTOs)
+                                    {
+                                        if (message.SenderUserName == context.User.Identity.Name)
+                                        {
+                                            <div class="message" style="display: flex; justify-content: space-between; width: 100%;">
+                                                @message.SenderUserName: @message.Content <h3 @onclick='async() => { await hubConnection.InvokeAsync("RemoveMessage", new MessagesDTO { Id = message.Id, GroupId = message.GroupId }); }' style="cursor: pointer;">Delete Message</h3>
+                                            </div>
+                                        }
+                                        else
+                                        {
+
+                                            <div class="message">
+                                                @message.SenderUserName: @message.Content
+                                            </div>
+
+                                        }
+                                    }
+                                }
+                                <div>
+                                    <input @bind="message" @bind:event="oninput" />
+                                    <h3 @onclick="async() => await SendMessage()" style="cursor: pointer;">Send Message</h3>
+                                </div>
+                                @if (learningNoteDTOs != null)
+                                {
+                                    <div class="LearningNote" style="margin-top: 25px;">
+                                        <h2>All created LearningNotes</h2>
+                                    </div>
+                                    <div class="LearningNotes" style="">
+                                        @foreach (var item in learningNoteDTOs)
+                                        {
+                                            <div class="LearningNote" style="margin-top: 15px;">
+                                                <h3>@item.LearningMessage</h3>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            <div>
+                                <input @bind="learningMessage" @bind:event="oninput" />
+                                <h3 @onclick="async() => await CreateLearningNote()" style="cursor: pointer;">Create a learning Note</h3>
+
+                                <div class="groupSection" style="border: 2px solid white; padding: 3px; border-radius: 3px;">
+                                    @if (!GroupDTO.MembersId.Contains(context.User.Claims.Where(s => s.Type == ClaimTypes.NameIdentifier).First().Value))
+                                    {
+                                        <h5 style="cursor: pointer;" @onclick="async() => await JoinGroup(GroupDTO.Id)">Subscribe to push notifcations for LearningNotes</h5>
+                                    }
+                                    else
+                                    {
+                                        <h5 style="cursor: pointer;" @onclick="async() => await LeaveGroup(GroupDTO.Id)">UnSubscribe from push notifcations for LearningNotes</h5>
+                                    }
+                                </div>
+                            </div>
+                            </Authorized>
+                            <NotAuthorized>
+                                @if (messagesDTOs != null)
+                                {
+                                    @foreach (var message in messagesDTOs)
+                                    {
+                                        <div class="message">
+                                            @message.SenderUserName: @message.Content
+                                        </div>
+                                    }
+                                }
+                                @if (learningNoteDTOs != null)
+                                {
+                                    <div class="LearningNote" style="margin-top: 25px;">
+                                        <h2>All created LearningNotes</h2>
+                                    </div>
+                                    <div class="LearningNotes">
+                                        @foreach (var item in learningNoteDTOs)
+                                        {
+                                            <div class="LearningNote">
+                                                <h3>@item.LearningMessage</h3>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                <h3>Login to send messages, create learning notes and video chat</h3>
+                            </NotAuthorized>
+                        </AuthorizeView>
+                    </div>
+                </div>
+            </div>
+            <div style="height: 100%;">
+                <div id="camera">
+                    @if (activeCamera != null)
+                    {
+                        <div class="CameraName">YourSelf</div>
+                    }
+                </div>
+                <div id="participants"></div>
+            </div>           
+        </div>     
+    }
+</div>
+
+
+@code{
+    [CascadingParameter]
+    public HubConnection hubConnection { get; set; }
+    [Parameter]
+    public GroupDTO GroupDTO { get; set; }
+    private string message, learningMessage;
+    private List<MessagesDTO> messagesDTOs;
+    private List<LearningNoteDTO> learningNoteDTOs;
+    private string activeCamera;
+    private bool muted;
+    private bool isVideoChatting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection.On("UpdateGroupMessages", async () =>
+        {
+            await GetMessagesLearningNotes();
+            StateHasChanged();
+        });
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if(GroupDTO != null)
+        {
+            await GetMessagesLearningNotes();
+            StateHasChanged();
+        }
+    }
+
+    public async Task GetMessagesLearningNotes()
+    {
+        messagesDTOs = await httpClient.GetFromJsonAsync<List<MessagesDTO>>($"/api/group/MessagesForGroup/{GroupDTO?.Id}");
+        learningNoteDTOs = await httpClient.GetFromJsonAsync<List<LearningNoteDTO>>($"/api/group/LearningNotesForGroup/{GroupDTO?.Id}");
+    }
+
+    private async ValueTask OnLeaveRoom()
+    {
+        await videoJS.LeaveRoomAsync();
+        isVideoChatting = false;
+    }
+
+    private async ValueTask<bool> TryJoinRoomAsync(string roomName)
+    {
+        var jwt = await httpClient.GetFromJsonAsync<TwilioJWTDTO>("api/twilio/token");
+        if (jwt?.Token is null)
+        {
+            return false;
+        }
+
+        var joined = await videoJS.CreateOrJoinRoomAsync(roomName, jwt.Token);
+        if (joined)
+        {
+            isVideoChatting = true;
+            StateHasChanged();
+        }
+
+        return joined;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await OnLeaveRoom();
+    }
+
+    public async Task SendMessage()
+    {
+        await hubConnection.InvokeAsync("SendMessage", new MessagesDTO
+        {
+            Content = message,
+            GroupId = GroupDTO.Id
+        });
+        message = string.Empty;
+        await GetMessagesLearningNotes();
+        StateHasChanged();
+    }
+    public async Task CreateLearningNote()
+    {
+        await hubConnection.InvokeAsync("CreateLearningNote", new LearningNoteDTO
+        {
+            LearningMessage = learningMessage,
+            GroupId = GroupDTO.Id
+        });
+        learningMessage = string.Empty;
+        await GetMessagesLearningNotes();
+        StateHasChanged();
+    }
+
+    public async Task JoinGroup(Guid groupId)
+    {
+        await httpClient.GetAsync($"api/group/joingroup/{groupId}");
+        GroupDTO = await httpClient.GetFromJsonAsync<GroupDTO>($"api/group/getgroup/{groupId}");
+        StateHasChanged();
+    }
+    public async Task LeaveGroup(Guid groupId)
+    {
+        await httpClient.GetAsync($"api/group/leavegroup/{groupId}");
+        GroupDTO = await httpClient.GetFromJsonAsync<GroupDTO>($"api/group/getgroup/{groupId}");
+        StateHasChanged();
+    }
+}

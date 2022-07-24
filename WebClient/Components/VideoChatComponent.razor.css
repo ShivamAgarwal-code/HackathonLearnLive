@@ -1,0 +1,29 @@
+﻿.VideoChatComponentContainer{
+    padding-left: 20px;
+    box-sizing: border-box;
+}
+#camera video{
+    height: 200px;
+    width: 200px;
+}
+.GroupHeader {
+    height: 35px;
+    width: 100%;
+    padding: 3px;
+    border: 2px solid white;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.3);
+    display: grid;
+    place-content: center;
+}
+.ChatContainer {
+    margin-top: 15px;
+    margin-right: 10px;
+    box-sizing: border-box;
+    height: 90%;
+    width: calc(100% - 10px);
+    padding: 3px;
+    border: 2px solid white;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.3);
+}

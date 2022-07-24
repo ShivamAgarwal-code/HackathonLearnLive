@@ -1,0 +1,24 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+@inject HttpClient httpClient
+
+<CascadingValue Value="hubConnection">
+    <div class="IndexContainer">
+        <GroupsComponent ChosenGroup="group => { currentlyChosenGroup = group; StateHasChanged(); }" />
+        <VideoChatComponent GroupDTO="currentlyChosenGroup" />
+    </div>
+</CascadingValue>
+
+
+@code{
+    private HubConnection hubConnection;
+    private GroupDTO currentlyChosenGroup;
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+                .WithUrl(NavigationManager.ToAbsoluteUri("/videoChatHub"))
+                .Build();
+        StateHasChanged();
+        await hubConnection.StartAsync();
+    }
+}

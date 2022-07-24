@@ -1,0 +1,82 @@
+﻿<style>
+    select{
+        padding: 3px;
+        border: 2px solid white;
+        outline: none;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.3);
+        color: white;
+        font-size: 20px;
+    }
+    option{
+        color: black;
+    }
+</style>
+
+<div style="margin-bottom: 10px;">
+    <select @onchange="async(value) => await SelectCamera((string)value.Value)">
+        @if (HasCameras)
+        {
+            <option>Select a camera</option>
+            foreach (var device in Cameras)
+            {
+                <option value="@device.DeviceId">@device.Label</option>
+            }
+        }
+        else
+        {
+            <option>Add a camera to start video chatting</option>
+        }
+    </select>
+</div>
+
+
+@code{
+    public string DeviceId { get; set; }
+
+    [Inject]
+    public VideoJS VideoJS { get; set; }
+    [Parameter]
+    public EventCallback<string> CameraChanged { get; set; }
+
+    protected CameraDevice[] Cameras { get; private set; }
+    protected CameraDeviceState State { get; private set; }
+    protected bool HasCameras => State == CameraDeviceState.FoundCameras;
+    protected bool IsLoading => State == CameraDeviceState.LoadingCameras;
+    string _activeCamera;
+    static CameraSelectorComponent staticCameraSelectorComponent;
+    protected override async Task OnInitializedAsync()
+    {
+        staticCameraSelectorComponent = this;
+        Cameras = await VideoJS.GetVideoDevicesAsync();
+        State = Cameras?.Length > 0
+                ? CameraDeviceState.FoundCameras
+                : CameraDeviceState.Error;
+    }
+
+    public async Task GetVideoDevicesAsync()
+    {
+        Cameras = await VideoJS.GetVideoDevicesAsync();
+        State = Cameras?.Length > 0
+                ? CameraDeviceState.FoundCameras
+                : CameraDeviceState.Error;
+    }
+
+    protected async ValueTask SelectCamera(string deviceId)
+    {
+        await VideoJS.StartVideoAsync(deviceId, "#camera");
+        _activeCamera = deviceId;
+
+        if (CameraChanged.HasDelegate)
+        {
+            await CameraChanged.InvokeAsync(_activeCamera);
+        }
+    }
+
+    [JSInvokable]
+    public static async Task UpdateDevices()
+    {
+        await staticCameraSelectorComponent.GetVideoDevicesAsync();
+        staticCameraSelectorComponent.StateHasChanged();
+    }
+}
