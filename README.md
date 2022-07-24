@@ -1,7 +1,7 @@
 # HackathonLearnLive
 
-[![SC2 Video](https://raw.githubusercontent.com/DavidEggenberger/HackathonLearnLive/master/LearnLive.PNG)](https://youtu.be/jq-n3eMEs_M "Click to Watch a walkthrough")
-Click on the screenshot to see a walkthrough on YouTube.
+[![SC2 Video](https://raw.githubusercontent.com/ShivamAgarwal-code/HackathonLearnLive/master/WhatsApp Image 2022-07-24 at 5.10.10 PM.jpeg]
+
 
 
 <h3>What does it do?</h3>
