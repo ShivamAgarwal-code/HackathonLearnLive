@@ -1,9 +1,5 @@
 # HackathonLearnLive
 
-(WhatsApp Image 2022-07-24 at 5.10.10 PM.jpeg]
-
-
-
 <h3>What does it do?</h3>
 
 Users can sign up either with their Google or GitHub accounts. They can create learning groups themselves or join groups that have already been created. When they subscribe to a group they receive push notifications over WhatsApp whenever a learning note is created in that group. A learning note is a very useful thing to learn about the topic of the group and can be created by a user of a group. The users can and are encouraged to enable their webcam and join. Per audio and video they can discuss which learning note should be created next. Because they are on video this also creates a community feel and members can encourage each others.
