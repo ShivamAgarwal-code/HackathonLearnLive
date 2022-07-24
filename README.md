@@ -1,6 +1,6 @@
 # HackathonLearnLive
 
-[![SC2 Video](https://raw.githubusercontent.com/ShivamAgarwal-code/HackathonLearnLive/master/WhatsApp Image 2022-07-24 at 5.10.10 PM.jpeg]
+[![SC2 Video](WhatsApp Image 2022-07-24 at 5.10.10 PM.jpeg]
 
 
 
