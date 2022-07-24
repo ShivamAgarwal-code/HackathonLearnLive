@@ -1,6 +1,6 @@
 # HackathonLearnLive
 
-[![SC2 Video](WhatsApp Image 2022-07-24 at 5.10.10 PM.jpeg]
+(WhatsApp Image 2022-07-24 at 5.10.10 PM.jpeg]
 
 
 
